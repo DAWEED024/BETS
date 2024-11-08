@@ -200,7 +200,11 @@
             const team1Class = coupon.result === "team1" ? "selected-team" : "";
             const team2Class = coupon.result === "team2" ? "selected-team" : "";
 
-            const stars = Array(coupon.starRating).fill('&#9733;').join('') + Array(5 - coupon.starRating).fill('&#9734;').join('');
+            // Wyświetl gwiazdki w taki sam sposób jak w panelu admina
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                stars += `<span style="color: ${i <= coupon.starRating ? 'gold' : '#ccc'}">&#9733;</span>`;
+            }
 
             couponContainer.innerHTML = `
                 <p><strong>Mecz:</strong> <span class="${team1Class}">${coupon.team1}</span> vs <span class="${team2Class}">${coupon.team2}</span></p>
