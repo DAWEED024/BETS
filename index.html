@@ -73,8 +73,8 @@
     </div>
 
     <script>
-        const apiKey = "$2a$10$h5dwrbLRR.FOcczwjw5mPudAk9ZUtrJwV2Ld17XEYd75daW79VDiC";  // Twój klucz API z JSONBin.io
-        const binId = "672d6b73ad19ca34f8c64276";             // ID Twojego bina z JSONBin.io
+        const apiKey = "$2a$10$h5dwrbLRR.FOcczwjw5mPudAk9ZUtrJwV2Ld17XEYd75daW79VDiC";
+        const binId = "672d6b73ad19ca34f8c64276";
 
         let isAdmin = false;
 
@@ -83,7 +83,7 @@
             const password = prompt("Podaj hasło admina:");
             if (password === "pozdro600") {
                 isAdmin = true;
-                document.getElementById("adminSection").style.display = "block"; // Pokaż sekcję dla admina
+                document.getElementById("adminSection").style.display = "block";
                 alert("Zalogowano jako admin");
                 loadCoupons();
             } else {
@@ -91,7 +91,6 @@
             }
         }
 
-        // Funkcja zmiany zakładek
         function showTab(tab) {
             document.getElementById("current-tab").style.display = tab === "current" ? "block" : "none";
             document.getElementById("coupons").style.display = tab === "current" ? "block" : "none";
@@ -99,7 +98,6 @@
             document.getElementById("history").style.display = tab === "history" ? "block" : "none";
         }
 
-        // Funkcja ustawienia liczby gwiazdek
         function setStars(starCount) {
             document.getElementById('starValue').value = starCount;
             const stars = document.querySelectorAll('#starRating span');
@@ -108,7 +106,6 @@
             });
         }
 
-        // Funkcja dodawania nowego kuponu
         function addCoupon() {
             const team1 = document.getElementById('team1').value;
             const team2 = document.getElementById('team2').value;
@@ -126,11 +123,6 @@
             }
 
             const coupon = { team1, team2, matchDate, matchTime, result, goalsChoice, goalsValue, bothTeamsScore, starRating, status: "" };
-            saveCoupon(coupon);
-        }
-
-        // Funkcja zapisywania kuponu do JSONBin.io
-        function saveCoupon(newCoupon) {
             fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                 method: 'GET',
                 headers: {
@@ -141,7 +133,7 @@
             .then(response => response.json())
             .then(data => {
                 const coupons = data.record || [];
-                coupons.push(newCoupon);
+                coupons.push(coupon);
 
                 return fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                     method: 'PUT',
@@ -160,7 +152,6 @@
             .catch(error => console.error("Błąd zapisu kuponu:", error));
         }
 
-        // Funkcja ładowania kuponów z JSONBin.io
         function loadCoupons() {
             fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                 method: 'GET',
@@ -172,14 +163,20 @@
             .then(response => response.json())
             .then(data => {
                 const coupons = data.record || [];
-                console.log("Kupony załadowane:", coupons);
-                displayCouponsByDate(coupons, "coupons");
+                const currentCoupons = coupons.filter(coupon => coupon.status === "");
+                const historyCoupons = coupons.filter(coupon => coupon.status === "win" || coupon.status === "lose");
+                
+                displayCouponsByDate(currentCoupons, "coupons");
+                displayCouponsByDate(historyCoupons, "history");
+                calculateEffectiveness(historyCoupons);
             })
             .catch(error => console.error("Błąd ładowania kuponów:", error));
         }
 
-        // Funkcja wyświetlania kuponów podzielonych na dni
         function displayCouponsByDate(coupons, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
             const groupedByDate = coupons.reduce((acc, coupon) => {
                 if (!acc[coupon.matchDate]) acc[coupon.matchDate] = [];
                 acc[coupon.matchDate].push(coupon);
@@ -189,23 +186,20 @@
             Object.keys(groupedByDate).sort().forEach(date => {
                 const dateSection = document.createElement('h3');
                 dateSection.textContent = `Kupony na dzień ${date}`;
-                document.getElementById(containerId).appendChild(dateSection);
+                container.appendChild(dateSection);
 
-                groupedByDate[date]
-                    .sort((a, b) => a.matchTime.localeCompare(b.matchTime))
-                    .forEach((coupon, index) => displayCoupon(coupon, index, containerId));
+                groupedByDate[date].forEach((coupon, index) => displayCoupon(coupon, index, containerId));
             });
         }
 
-        // Funkcja wyświetlania kuponu
         function displayCoupon(coupon, index, containerId) {
+            const container = document.getElementById(containerId);
             const couponContainer = document.createElement('div');
             couponContainer.className = `coupon ${coupon.status === "win" ? "win" : coupon.status === "lose" ? "lose" : ""}`;
 
             const team1Class = coupon.result === "team1" ? "selected-team" : "";
             const team2Class = coupon.result === "team2" ? "selected-team" : "";
 
-            // Tworzenie gwiazdek
             const stars = Array(coupon.starRating).fill('&#9733;').join('') + Array(5 - coupon.starRating).fill('&#9734;').join('');
 
             couponContainer.innerHTML = `
@@ -218,10 +212,80 @@
                 ${isAdmin && containerId === "coupons" ? `
                     <button onclick="updateStatus(${index}, 'win')" class="status-win">Wygrany</button>
                     <button onclick="updateStatus(${index}, 'lose')" class="status-lose">Przegrany</button>
+                    <button onclick="deleteCoupon(${index})" class="btn-delete">Usuń</button>
                 ` : ""}
             `;
 
-            document.getElementById(containerId).appendChild(couponContainer);
+            container.appendChild(couponContainer);
+        }
+
+        function updateStatus(index, status) {
+            fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                method: 'GET',
+                headers: {
+                    'X-Master-Key': apiKey,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const coupons = data.record || [];
+                coupons[index].status = status;
+
+                return fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-Master-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(coupons)
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Status kuponu zaktualizowany:", data);
+                loadCoupons();
+            })
+            .catch(error => console.error("Błąd aktualizacji statusu kuponu:", error));
+        }
+
+        function deleteCoupon(index) {
+            fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                method: 'GET',
+                headers: {
+                    'X-Master-Key': apiKey,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const coupons = data.record || [];
+                coupons.splice(index, 1);
+
+                return fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-Master-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(coupons)
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Kupon usunięty:", data);
+                loadCoupons();
+            })
+            .catch(error => console.error("Błąd usuwania kuponu:", error));
+        }
+
+        function calculateEffectiveness(historyCoupons) {
+            const total = historyCoupons.length;
+            const wins = historyCoupons.filter(coupon => coupon.status === "win").length;
+            const effectiveness = total > 0 ? (wins / total) * 100 : 0;
+            const effectivenessCounter = document.getElementById('effectiveness');
+            effectivenessCounter.innerHTML = `Skuteczność: ${effectiveness.toFixed(2)}%`;
+            effectivenessCounter.className = "effectiveness-counter " + (effectiveness >= 50 ? "high" : "low");
         }
 
         document.addEventListener('DOMContentLoaded', loadCoupons);
