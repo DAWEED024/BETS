@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kupony Betclic</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Ikona korony do logowania admina -->
+    <div id="adminLoginIcon" onclick="adminLogin()">
+        👑
+    </div>
+
+    <div class="container">
+        <h1>Kupony Betclic</h1>
+        
+        <!-- Zakładki -->
+        <div class="tabs">
+            <button onclick="showTab('current')">Aktualne Kupony</button>
+            <button onclick="showTab('history')">Historia Kuponów</button>
+        </div>
+
+        <!-- Sekcja dla admina (formularz dodawania kuponów) -->
+        <div id="adminSection" style="display: none;">
+            <h2>Dodaj nowy kupon</h2>
+            <input type="text" id="team1" placeholder="Drużyna 1">
+            <input type="text" id="team2" placeholder="Drużyna 2">
+            <input type="date" id="matchDate" placeholder="Data meczu">
+            <input type="time" id="matchTime" placeholder="Godzina meczu">
+            
+            <label>Typ zakładu:</label>
+            <div class="options">
+                <label><input type="radio" name="result" value="team1"> Drużyna 1</label>
+                <label><input type="radio" name="result" value="draw"> Remis</label>
+                <label><input type="radio" name="result" value="team2"> Drużyna 2</label>
+            </div>
+
+            <label>Opcje dodatkowe:</label>
+            <div class="options goals-option">
+                <label><input type="radio" name="goals" value="Powyżej"> Powyżej</label>
+                <label><input type="radio" name="goals" value="Poniżej"> Poniżej</label>
+                <input type="number" id="goalsValue" placeholder="Wpisz liczbę bramek" min="0" step="0.5">
+            </div>
+            <div class="options">
+                <label><input type="checkbox" id="bothTeamsScore"> Dwie drużyny strzelą bramkę</label>
+            </div>
+            
+            <label>Szanse na wygraną (gwiazdki):</label>
+            <div id="starRating" class="star-rating">
+                <span onclick="setStars(1)">&#9733;</span>
+                <span onclick="setStars(2)">&#9733;</span>
+                <span onclick="setStars(3)">&#9733;</span>
+                <span onclick="setStars(4)">&#9733;</span>
+                <span onclick="setStars(5)">&#9733;</span>
+            </div>
+            <input type="hidden" id="starValue" value="0">
+
+            <button class="btn-primary" onclick="addCoupon()">Dodaj kupon</button>
+        </div>
+
+        <!-- Sekcja wyświetlania kuponów (dla wszystkich) -->
+        <h2 id="current-tab">Aktualne Kupony</h2>
+        <div id="coupons"></div>
+        
+        <!-- Sekcja historii kuponów -->
+        <h2 id="history-tab" style="display: none;">Historia Kuponów</h2>
+        <div id="history" style="display: none;"></div>
+        
+        <!-- Licznik skuteczności -->
+        <div id="effectiveness" class="effectiveness-counter"></div>
+    </div>
+
+    <script>
+        let isAdmin = false;
+
+        // Funkcja logowania do trybu administratora po kliknięciu ikony korony
+        function adminLogin() {
+            const password = prompt("Podaj hasło admina:");
+            if (password === "pozdro600") {
+                isAdmin = true;
+                document.getElementById("adminSection").style.display = "block"; // Pokaż sekcję dla admina
+                alert("Zalogowano jako admin");
+                loadCoupons();
+            } else {
+                alert("Nieprawidłowe hasło");
+            }
+        }
+
+        // Funkcja zmiany zakładek
+        function showTab(tab) {
+            document.getElementById("current-tab").style.display = tab === "current" ? "block" : "none";
+            document.getElementById("coupons").style.display = tab === "current" ? "block" : "none";
+            document.getElementById("history-tab").style.display = tab === "history" ? "block" : "none";
+            document.getElementById("history").style.display = tab === "history" ? "block" : "none";
+        }
+
+        // Funkcja ustawienia liczby gwiazdek
+        function setStars(starCount) {
+            document.getElementById('starValue').value = starCount;
+            const stars = document.querySelectorAll('#starRating span');
+            stars.forEach((star, index) => {
+                star.style.color = index < starCount ? 'gold' : '#ccc';
+            });
+        }
+
+        // Funkcja ładowania kuponów z localStorage
+        function loadCoupons() {
+            const savedCoupons = JSON.parse(localStorage.getItem('coupons')) || [];
+            document.getElementById('coupons').innerHTML = ''; // Czyści wyświetlane kupony
+            document.getElementById('history').innerHTML = ''; // Czyści historię kuponów
+            
+            const currentCoupons = savedCoupons.filter(coupon => coupon.status === "");
+            const historyCoupons = savedCoupons.filter(coupon => coupon.status === "win" || coupon.status === "lose");
+            
+            // Wyświetl aktualne kupony
+            displayCouponsByDate(currentCoupons, "coupons");
+            
+            // Wyświetl kupony w historii
+            displayCouponsByDate(historyCoupons, "history");
+            
+            // Oblicz skuteczność kuponów
+            calculateEffectiveness(historyCoupons);
+        }
+
+        // Funkcja dodawania nowego kuponu
+        function addCoupon() {
+            const team1 = document.getElementById('team1').value;
+            const team2 = document.getElementById('team2').value;
+            const matchDate = document.getElementById('matchDate').value;
+            const matchTime = document.getElementById('matchTime').value;
+            const result = document.querySelector('input[name="result"]:checked')?.value;
+            const goalsChoice = document.querySelector('input[name="goals"]:checked')?.value || "";
+            const goalsValue = document.getElementById('goalsValue').value;
+            const bothTeamsScore = document.getElementById('bothTeamsScore').checked ? "Tak" : "";
+            const starRating = parseInt(document.getElementById('starValue').value);
+
+            if (!team1 || !team2 || !matchDate || !matchTime || !result || starRating === 0) {
+                alert("Wypełnij wszystkie pola i wybierz liczbę gwiazdek.");
+                return;
+            }
+
+            const coupon = { team1, team2, matchDate, matchTime, result, goalsChoice, goalsValue, bothTeamsScore, starRating, status: "" };
+            saveCoupon(coupon);
+            loadCoupons();
+
+            // Czyszczenie pól
+            document.getElementById('team1').value = '';
+            document.getElementById('team2').value = '';
+            document.getElementById('matchDate').value = '';
+            document.getElementById('matchTime').value = '';
+            document.querySelector('input[name="result"]:checked').checked = false;
+            if (document.querySelector('input[name="goals"]:checked')) {
+                document.querySelector('input[name="goals"]:checked').checked = false;
+            }
+            document.getElementById('goalsValue').value = '';
+            document.getElementById('bothTeamsScore').checked = false;
+            setStars(0); // Resetuj gwiazdki
+        }
+
+        // Funkcja wyświetlania kuponów podzielonych na dni
+        function displayCouponsByDate(coupons, containerId) {
+            const groupedByDate = coupons.reduce((acc, coupon) => {
+                if (!acc[coupon.matchDate]) acc[coupon.matchDate] = [];
+                acc[coupon.matchDate].push(coupon);
+                return acc;
+            }, {});
+
+            Object.keys(groupedByDate).sort().forEach(date => {
+                const dateSection = document.createElement('h3');
+                dateSection.textContent = `Kupony na dzień ${date}`;
+                document.getElementById(containerId).appendChild(dateSection);
+
+                groupedByDate[date]
+                    .sort((a, b) => a.matchTime.localeCompare(b.matchTime))
+                    .forEach((coupon, index) => displayCoupon(coupon, index, containerId));
+            });
+        }
+
+        // Funkcja wyświetlania kuponu
+        function displayCoupon(coupon, index, containerId) {
+            const couponContainer = document.createElement('div');
+            couponContainer.className = `coupon ${coupon.status === "win" ? "win" : coupon.status === "lose" ? "lose" : ""}`;
+
+            const team1Class = coupon.result === "team1" ? "selected-team" : "";
+            const team2Class = coupon.result === "team2" ? "selected-team" : "";
+
+            // Tworzenie gwiazdek
+            const stars = Array(coupon.starRating).fill('&#9733;').join('') + Array(5 - coupon.starRating).fill('&#9734;').join('');
+
+            couponContainer.innerHTML = `
+                <p><strong>Mecz:</strong> <span class="${team1Class}">${coupon.team1}</span> vs <span class="${team2Class}">${coupon.team2}</span></p>
+                <p><strong>Data:</strong> ${coupon.matchDate}, <strong>Godzina:</strong> ${coupon.matchTime}</p>
+                <p><strong>Typ:</strong> ${coupon.result === "team1" ? coupon.team1 : coupon.result === "team2" ? coupon.team2 : "Remis"}</p>
+                <p><strong>Szanse na wygraną:</strong> ${stars}</p>
+                ${coupon.goalsChoice && coupon.goalsValue ? `<p><strong>Bramki:</strong> ${coupon.goalsChoice} ${coupon.goalsValue}</p>` : ""}
+                ${coupon.bothTeamsScore ? `<p><strong>Obie drużyny strzelą:</strong> ${coupon.bothTeamsScore}</p>` : ""}
+                ${isAdmin && containerId === "coupons" ? `
+                    <button onclick="updateStatus(${index}, 'win')" class="status-win">Wygrany</button>
+                    <button onclick="updateStatus(${index}, 'lose')" class="status-lose">Przegrany</button>
+                    <button class="btn-delete" onclick="deleteCoupon(${index})">Usuń</button>
+                ` : ""}
+            `;
+
+            document.getElementById(containerId).appendChild(couponContainer);
+        }
+
+        // Funkcja zapisywania kuponu w localStorage
+        function saveCoupon(coupon) {
+            const savedCoupons = JSON.parse(localStorage.getItem('coupons')) || [];
+            savedCoupons.push(coupon);
+            localStorage.setItem('coupons', JSON.stringify(savedCoupons));
+        }
+
+        // Funkcja usuwania kuponu (dostępna tylko dla admina)
+        function deleteCoupon(index) {
+            const savedCoupons = JSON.parse(localStorage.getItem('coupons'));
+            savedCoupons.splice(index, 1);
+            localStorage.setItem('coupons', JSON.stringify(savedCoupons));
+            loadCoupons();
+        }
+
+        // Funkcja aktualizacji statusu kuponu
+        function updateStatus(index, status) {
+            const savedCoupons = JSON.parse(localStorage.getItem('coupons'));
+            savedCoupons[index].status = status;
+            localStorage.setItem('coupons', JSON.stringify(savedCoupons));
+            loadCoupons();
+        }
+
+        // Funkcja obliczania skuteczności kuponów
+        function calculateEffectiveness(historyCoupons) {
+            const total = historyCoupons.length;
+            const wins = historyCoupons.filter(coupon => coupon.status === "win").length;
+            const effectiveness = total > 0 ? (wins / total) * 100 : 0;
+            const effectivenessCounter = document.getElementById('effectiveness');
+            effectivenessCounter.innerHTML = `Skuteczność: ${effectiveness.toFixed(2)}%`;
+            effectivenessCounter.className = "effectiveness-counter " + (effectiveness >= 50 ? "high" : "low");
+        }
+
+        // Załaduj kupony po otwarciu strony
+        document.addEventListener('DOMContentLoaded', loadCoupons);
+    </script>
+
+</body>
+</html>

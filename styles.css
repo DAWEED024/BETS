@@ -1,0 +1,252 @@
+/* Reset stylów */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Styl podstawowy dla strony */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #f7f7f7, #e3e3e3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    color: #34495e;
+}
+
+/* Styl głównego kontenera */
+.container {
+    width: 100%;
+    max-width: 800px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    margin: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Ikona korony do logowania */
+#adminLoginIcon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #ff9f43;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+#adminLoginIcon:hover {
+    transform: scale(1.2);
+    color: #f0932b;
+}
+
+/* Nagłówki */
+h1, h2 {
+    color: #1e3799;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 2.5em;
+}
+
+h2 {
+    font-size: 1.8em;
+    text-transform: uppercase;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #1e3799;
+}
+
+/* Styl panelu administratora */
+#adminSection {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+#adminSection h2 {
+    color: #1e3799;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+}
+
+/* Stylizacja pól formularza w panelu admina */
+#adminSection input[type="text"],
+#adminSection input[type="date"],
+#adminSection input[type="time"],
+#adminSection input[type="number"],
+#adminSection select,
+#adminSection label,
+#adminSection .options {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0 16px;
+    border: 1px solid #d1d8e0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #34495e;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.05);
+    font-size: 1em;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#adminSection input[type="text"]:focus,
+#adminSection input[type="date"]:focus,
+#adminSection input[type="time"]:focus,
+#adminSection input[type="number"]:focus {
+    border-color: #1e3799;
+    box-shadow: 0 0 8px rgba(30, 55, 153, 0.3);
+}
+
+/* Stylizowane gwiazdki */
+.star-rating {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin: 10px 0 20px;
+}
+
+.star-rating span {
+    font-size: 28px;
+    color: #ff9f43;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.star-rating span:hover,
+.star-rating span.active {
+    color: #f0932b;
+    transform: scale(1.2);
+}
+
+.star-rating span:hover ~ span {
+    color: #ccc;
+}
+
+/* Styl przycisku dodawania kuponu */
+.btn-primary {
+    background: linear-gradient(135deg, #1e3799, #3742fa);
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #273c75, #192a56);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Styl przycisków zakładek */
+.tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.tabs button {
+    background-color: #1e3799;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tabs button:hover {
+    background-color: #3a47b0;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.tabs button:active {
+    transform: translateY(0);
+}
+
+/* Styl kuponów w panelu gościa */
+.coupon {
+    background: linear-gradient(135deg, #ffffff, #f0f4f8);
+    border: 1px solid #1e3799;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Wygrane i przegrane kupony */
+.coupon.win {
+    background-color: rgba(144, 238, 144, 0.2); /* Pastelowy zielony */
+    border-color: #32cd32;
+}
+
+.coupon.lose {
+    background-color: rgba(255, 182, 193, 0.2); /* Pastelowy czerwony */
+    border-color: #ff6347;
+}
+
+/* Licznik skuteczności */
+.effectiveness-counter {
+    margin-top: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: #f1f2f6;
+    transition: color 0.3s ease, background-color 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Styl dla efektu licznika */
+.effectiveness-counter.high {
+    color: #32cd32;
+    background-color: rgba(144, 238, 144, 0.1);
+}
+
+.effectiveness-counter.low {
+    color: #ff6347;
+    background-color: rgba(255, 182, 193, 0.1);
+}
+
+/* Efekty przy hover */
+.coupon:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+}
