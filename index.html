@@ -73,6 +73,9 @@
     </div>
 
     <script>
+        const apiKey = "$2a$10$h5dwrbLRR.FOcczwjw5mPudAk9ZUtrJwV2Ld17XEYd75daW79VDiC";  // Twój klucz API z JSONBin.io
+        const binId = "672d6b73ad19ca34f8c64276";             // ID Twojego bina z JSONBin.io
+
         let isAdmin = false;
 
         // Funkcja logowania do trybu administratora po kliknięciu ikony korony
@@ -105,25 +108,6 @@
             });
         }
 
-        // Funkcja ładowania kuponów z localStorage
-        function loadCoupons() {
-            const savedCoupons = JSON.parse(localStorage.getItem('coupons')) || [];
-            document.getElementById('coupons').innerHTML = ''; // Czyści wyświetlane kupony
-            document.getElementById('history').innerHTML = ''; // Czyści historię kuponów
-            
-            const currentCoupons = savedCoupons.filter(coupon => coupon.status === "");
-            const historyCoupons = savedCoupons.filter(coupon => coupon.status === "win" || coupon.status === "lose");
-            
-            // Wyświetl aktualne kupony
-            displayCouponsByDate(currentCoupons, "coupons");
-            
-            // Wyświetl kupony w historii
-            displayCouponsByDate(historyCoupons, "history");
-            
-            // Oblicz skuteczność kuponów
-            calculateEffectiveness(historyCoupons);
-        }
-
         // Funkcja dodawania nowego kuponu
         function addCoupon() {
             const team1 = document.getElementById('team1').value;
@@ -143,20 +127,55 @@
 
             const coupon = { team1, team2, matchDate, matchTime, result, goalsChoice, goalsValue, bothTeamsScore, starRating, status: "" };
             saveCoupon(coupon);
-            loadCoupons();
+        }
 
-            // Czyszczenie pól
-            document.getElementById('team1').value = '';
-            document.getElementById('team2').value = '';
-            document.getElementById('matchDate').value = '';
-            document.getElementById('matchTime').value = '';
-            document.querySelector('input[name="result"]:checked').checked = false;
-            if (document.querySelector('input[name="goals"]:checked')) {
-                document.querySelector('input[name="goals"]:checked').checked = false;
-            }
-            document.getElementById('goalsValue').value = '';
-            document.getElementById('bothTeamsScore').checked = false;
-            setStars(0); // Resetuj gwiazdki
+        // Funkcja zapisywania kuponu do JSONBin.io
+        function saveCoupon(newCoupon) {
+            fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                method: 'GET',
+                headers: {
+                    'X-Master-Key': apiKey,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const coupons = data.record || [];
+                coupons.push(newCoupon);
+
+                return fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'X-Master-Key': apiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(coupons)
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Kupon zapisany:", data);
+                loadCoupons();
+            })
+            .catch(error => console.error("Błąd zapisu kuponu:", error));
+        }
+
+        // Funkcja ładowania kuponów z JSONBin.io
+        function loadCoupons() {
+            fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                method: 'GET',
+                headers: {
+                    'X-Master-Key': apiKey,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const coupons = data.record || [];
+                console.log("Kupony załadowane:", coupons);
+                displayCouponsByDate(coupons, "coupons");
+            })
+            .catch(error => console.error("Błąd ładowania kuponów:", error));
         }
 
         // Funkcja wyświetlania kuponów podzielonych na dni
@@ -199,47 +218,12 @@
                 ${isAdmin && containerId === "coupons" ? `
                     <button onclick="updateStatus(${index}, 'win')" class="status-win">Wygrany</button>
                     <button onclick="updateStatus(${index}, 'lose')" class="status-lose">Przegrany</button>
-                    <button class="btn-delete" onclick="deleteCoupon(${index})">Usuń</button>
                 ` : ""}
             `;
 
             document.getElementById(containerId).appendChild(couponContainer);
         }
 
-        // Funkcja zapisywania kuponu w localStorage
-        function saveCoupon(coupon) {
-            const savedCoupons = JSON.parse(localStorage.getItem('coupons')) || [];
-            savedCoupons.push(coupon);
-            localStorage.setItem('coupons', JSON.stringify(savedCoupons));
-        }
-
-        // Funkcja usuwania kuponu (dostępna tylko dla admina)
-        function deleteCoupon(index) {
-            const savedCoupons = JSON.parse(localStorage.getItem('coupons'));
-            savedCoupons.splice(index, 1);
-            localStorage.setItem('coupons', JSON.stringify(savedCoupons));
-            loadCoupons();
-        }
-
-        // Funkcja aktualizacji statusu kuponu
-        function updateStatus(index, status) {
-            const savedCoupons = JSON.parse(localStorage.getItem('coupons'));
-            savedCoupons[index].status = status;
-            localStorage.setItem('coupons', JSON.stringify(savedCoupons));
-            loadCoupons();
-        }
-
-        // Funkcja obliczania skuteczności kuponów
-        function calculateEffectiveness(historyCoupons) {
-            const total = historyCoupons.length;
-            const wins = historyCoupons.filter(coupon => coupon.status === "win").length;
-            const effectiveness = total > 0 ? (wins / total) * 100 : 0;
-            const effectivenessCounter = document.getElementById('effectiveness');
-            effectivenessCounter.innerHTML = `Skuteczność: ${effectiveness.toFixed(2)}%`;
-            effectivenessCounter.className = "effectiveness-counter " + (effectiveness >= 50 ? "high" : "low");
-        }
-
-        // Załaduj kupony po otwarciu strony
         document.addEventListener('DOMContentLoaded', loadCoupons);
     </script>
 
