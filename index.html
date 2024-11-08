@@ -214,6 +214,9 @@
                     <button onclick="updateStatus(${index}, 'lose')" class="status-lose">Przegrany</button>
                     <button onclick="deleteCoupon(${index})" class="btn-delete">Usuń</button>
                 ` : ""}
+                ${isAdmin && containerId === "history" ? `
+                    <button onclick="deleteCoupon(${index})" class="btn-delete">Usuń z historii</button>
+                ` : ""}
             `;
 
             container.appendChild(couponContainer);
